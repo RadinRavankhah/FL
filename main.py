@@ -5,14 +5,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 from keras.datasets import mnist
 
-# Load MNIST dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-
-# Check shapes
-print(f"x_train shape: {x_train.shape}, y_train shape: {y_train.shape}")
-print(f"x_test shape: {x_test.shape}, y_test shape: {y_test.shape}")
-
 
 def load_mnist_images(file_path):
     with open(file_path, 'rb') as f:
@@ -84,27 +76,34 @@ def partition(number_of_devices, list_of_image_labels):
                 image_label = list_of_image_labels.pop(0)
             device.training_images.append(image_label[0])
             device.training_labels.append(image_label[1])
-        counter +=1
+        # counter +=1
         # print(counter)  was just for testing
     
     return devices
 
-def train_all_devices_return_averaged_weights(devices):
+def train_all_devices_return_averaged_weights(devices, binary_node_selection_list):
     counter = 1
     for device in devices:
-        print(f"Device number {counter} is now training...")
-        counter += 1
-        device.train()
+        if binary_node_selection_list[counter-1] == 1:
+            print(f"Device number {counter} is now training...")
+            counter += 1
+            device.train()
+        else:
+            print(f"Device number {counter} is not selected for training...")
+            counter += 1
 
     list_of_weights = []
+    counter = 1
     for device in devices:
-        list_of_weights.append(device.model.get_weights())
+        if binary_node_selection_list[counter-1] == 1:
+            list_of_weights.append(device.model.get_weights())
+        counter += 1
 
     # Compute the average weights across all models
     averaged_weights = [np.mean(layer_weights, axis=0) for layer_weights in zip(*list_of_weights)]
     return averaged_weights
 
-def make_main_model_and_test_it(averaged_weights):
+def make_main_model_and_test_it(averaged_weights, x_test, y_test):
 
     main_model = Sequential()
 
@@ -138,35 +137,51 @@ def make_main_model_and_test_it(averaged_weights):
     print(f"Test Accuracy: {test_accuracy}")
 
 
-
-# training and testing data
-x_train # (train_images)
-y_train # (train_labels)
-x_test # (test_images)
-y_test # (test_labels)
-
-print(f"Training images shape: {x_train.shape}")
-print(f"Training labels shape: {y_train.shape}")
-print(f"Test images shape: {x_test.shape}")
-print(f"Test labels shape: {y_test.shape}")
-
-# Normalize the pixel values to [0, 1]
-x_train = x_train.astype('float32') / 255
-x_test = x_test.astype('float32') / 255
-
-# Convert labels to one-hot encoding
-y_train = to_categorical(y_train, 10)
-y_test = to_categorical(y_test, 10)
+def federated_learning(n, binary_node_selection_list):
+    if not binary_node_selection_list:
+        binary_node_selection_list = [1 for i in range(n)]
+    # Load MNIST dataset
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 
-print(len(x_train))
-print(len(y_train))
-print(type(x_train))
+    # Check shapes
+    print(f"x_train shape: {x_train.shape}, y_train shape: {y_train.shape}")
+    print(f"x_test shape: {x_test.shape}, y_test shape: {y_test.shape}")
 
-remaining_indexes = make_image_label_list(x_train,y_train)
 
-devices = partition(6, remaining_indexes)
+    # training and testing data
+    x_train # (train_images)
+    y_train # (train_labels)
+    x_test # (test_images)
+    y_test # (test_labels)
 
-averaged_weights = train_all_devices_return_averaged_weights(devices)
+    print(f"Training images shape: {x_train.shape}")
+    print(f"Training labels shape: {y_train.shape}")
+    print(f"Test images shape: {x_test.shape}")
+    print(f"Test labels shape: {y_test.shape}")
 
-make_main_model_and_test_it(averaged_weights)
+    # Normalize the pixel values to [0, 1]
+    x_train = x_train.astype('float32') / 255
+    x_test = x_test.astype('float32') / 255
+
+    # Convert labels to one-hot encoding
+    y_train = to_categorical(y_train, 10)
+    y_test = to_categorical(y_test, 10)
+
+
+    print(len(x_train))
+    print(len(y_train))
+    print(type(x_train))
+
+    remaining_indexes = make_image_label_list(x_train,y_train)
+
+    devices = partition(n, remaining_indexes)
+
+    averaged_weights = train_all_devices_return_averaged_weights(devices, binary_node_selection_list)
+
+    make_main_model_and_test_it(averaged_weights, x_test, y_test)
+
+
+
+if __name__ == "__main__":
+    federated_learning(6)
