@@ -6,22 +6,6 @@ from tensorflow.keras.layers import Dense, Flatten
 from keras.datasets import mnist
 
 
-def load_mnist_images(file_path):
-    with open(file_path, 'rb') as f:
-        # Magic number and dimensions
-        magic, num_images, rows, cols = np.frombuffer(f.read(16), dtype=np.uint32).byteswap()
-        # Read image data
-        images = np.frombuffer(f.read(), dtype=np.uint8).reshape(num_images, rows, cols)
-        return images
-
-def load_mnist_labels(file_path):
-    with open(file_path, 'rb') as f:
-        # Magic number and number of items
-        magic, num_labels = np.frombuffer(f.read(8), dtype=np.uint32).byteswap()
-        # Read label data
-        labels = np.frombuffer(f.read(), dtype=np.uint8)
-        return labels
-
 def make_image_label_list(x_list, y_list):  # x_list and y_list should have the same length
     return [[x_list[i],y_list[i]] for i in range(len(x_list))]
 
