@@ -10,11 +10,13 @@ def make_image_label_list(x_list, y_list):  # x_list and y_list should have the 
     return [[x_list[i],y_list[i]] for i in range(len(x_list))]
 
 class Device:
-    def __init__(self):
+    def __init__(self, qualities=[], id=0):
         # Initialization code
+        self.id = id
         self.model = Sequential()
         self.training_images = []
         self.training_labels = []
+        self.qualities = []
 
     def train(self):
         # Device:
@@ -121,9 +123,8 @@ def make_main_model_and_test_it(averaged_weights, x_test, y_test):
     print(f"Test Accuracy: {test_accuracy}")
 
 
-def federated_learning(n, binary_node_selection_list):
-    if not binary_node_selection_list:
-        binary_node_selection_list = [1 for i in range(n)]
+# Load the MNIST dataset
+def load_mnist_data():
     # Load MNIST dataset
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
@@ -156,10 +157,22 @@ def federated_learning(n, binary_node_selection_list):
     print(len(x_train))
     print(len(y_train))
     print(type(x_train))
+    return x_train, y_train, x_test, y_test
 
-    remaining_indexes = make_image_label_list(x_train,y_train)
 
-    devices = partition(n, remaining_indexes)
+def federated_learning(n=0, devices=[], binary_node_selection_list=[]):
+    if len(binary_node_selection_list) == 0:
+        if not n == 0:
+            binary_node_selection_list = [1 for i in range(n)]
+        else:
+            binary_node_selection_list = [1 for i in range(len(devices))]
+    
+
+    x_train, y_train, x_test, y_test = load_mnist_data()
+    train_image_label_list = make_image_label_list(x_train,y_train)
+    
+    if len(devices)==0:
+        devices = partition(n, train_image_label_list)
 
     averaged_weights = train_all_devices_return_averaged_weights(devices, binary_node_selection_list)
 
@@ -168,4 +181,4 @@ def federated_learning(n, binary_node_selection_list):
 
 
 if __name__ == "__main__":
-    federated_learning(6)
+    federated_learning(6,binary_node_selection_list=[0,0,1,0,1,1])
