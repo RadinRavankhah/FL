@@ -63,7 +63,7 @@ problem = FederatedLearningProblem(devices, objective_functions)
 
 # Configure the NSGA-II algorithm
 algorithm = NSGA2(
-    pop_size=20,
+    pop_size=10,
     sampling=FloatRandomSampling(),
     crossover=SBX(prob=0.9, eta=15),
     mutation=PM(eta=20),
