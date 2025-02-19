@@ -79,7 +79,8 @@ def average_weights(devices):
 
 # Federated Training Loop
 num_rounds = 2  # Number of times to distribute weights and retrain: 3      (6 => 80%)(2 => 50%)
-top_n = 10  # Number of top Pareto front devices to train: 10
+top_n = 2  # Number of top Pareto front devices to train: 10  set to max for all devices
+default_epoch = 10 # epoch = 10
 
 for round_num in range(num_rounds):
     print(f"\n=== Federated Learning Round {round_num + 1} ===")
@@ -94,7 +95,7 @@ for round_num in range(num_rounds):
     for device in devices:
         if device.pareto_rank < top_n:
             x_subset, y_subset = device.data
-            device.model.fit(x_subset, y_subset, epochs=10, verbose=1) # epoch = 10
+            device.model.fit(x_subset, y_subset, epochs=default_epoch, verbose=1) # epoch = 10
             trained_devices.append(device)
     
     # Aggregate new global weights

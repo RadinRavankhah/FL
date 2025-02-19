@@ -40,7 +40,7 @@ def fast_non_dominated_sort(values):
     return pareto_fronts
 
 # Load data
-file_path = "version 4/data/federated_devices_1000.csv"
+file_path = "data/federated_devices_corrected.csv"
 df = pd.read_csv(file_path)
 
 # Extract the objective values
@@ -61,5 +61,5 @@ for rank, front in enumerate(pareto_fronts, start=1):
 df['pareto_rank'] = pareto_rank
 
 # Save results to CSV
-output_file = "version 4/data/pareto_front_results.csv"
+output_file = "data/pareto_front_results.csv"
 df.to_csv(output_file, index=False)
