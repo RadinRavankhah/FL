@@ -30,7 +30,8 @@ output_bitstring_text_file = "version 5/data/bitstring.txt"
 
 a = []
 for i in range(num_devices):
-    a.append(np.random.randint(0, 2))
+    # for the first time, it should be 1 for every device in the bit string
+    a.append(np.random.randint(1, 2))
 print(a)
 print("count of 1s:" + str(a.count(1)))
 

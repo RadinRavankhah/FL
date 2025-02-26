@@ -97,7 +97,7 @@ current_learning_iteration += 1
 for device in devices:
     print(int(device.device_id))
     if bitstring[int(device.device_id)] == 1:
-        device.model.fit(device.data[0], device.data[1], epochs=5, verbose=1)
+        device.model.fit(device.data[0], device.data[1], epochs=1, verbose=1)
         device.number_of_times_fitted += 1
 
 
@@ -173,62 +173,98 @@ print(f"Global Model Accuracy: {test_acc:.4f}")
 
 
 import numpy as np
-import random
+import os
 from pymoo.core.problem import Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.optimize import minimize
-from pymoo.operators.sampling.rnd import BinaryRandomSampling
-from pymoo.operators.crossover.pntx import TwoPointCrossover
-from pymoo.operators.mutation.bitflip import BitflipMutation
-from pymoo.operators.selection.tournament import TournamentSelection
-# from pymoo.util.termination.f_tol import MultiObjectiveSpaceToleranceTermination
 from pymoo.termination.default import DefaultMultiObjectiveTermination
+from pymoo.core.callback import Callback
+# from pymoo.operators.sampling.rnd import FloatRandomSampling
+# from pymoo.operators.crossover.sbx import SBX
+# from pymoo.operators.mutation.pm import PM
+from pymoo.core.crossover import Crossover
+from pymoo.core.mutation import Mutation
+from pymoo.core.sampling import Sampling
+from pymoo.operators.sampling.rnd import FloatRandomSampling
+from pymoo.util.ref_dirs import get_reference_directions
+from pymoo.operators.selection.tournament import TournamentSelection
 
-# Parameters
-NUM_DEVICES = num_devices   # Number of devices (length of bitstring)
-POPULATION_SIZE = 50
-NUM_GENERATIONS = 100
 
-# Step 1: Define the Problem
-class FederatedLearningProblem(Problem):
-    def __init__(self, num_devices):
-        super().__init__(
-            n_var=num_devices,         # Number of variables (bitstring length)
-            n_obj=3,                   # Number of objectives
-            n_constr=0,                # No constraints
-            xl=np.zeros(num_devices),  # Lower bound (0)
-            xu=np.ones(num_devices),   # Upper bound (1)
-            type_var=np.bool_          # Binary variables (bitstrings)
-        )
+# Define the multi-objective problem
+class FLProblem(Problem):
+    def __init__(self, n_devices):
+        super().__init__(n_var=n_devices, n_obj=3, n_constr=0, xl=0, xu=1, type_var=np.bool_)
+    
+    def _evaluate(self, x, out, *args, **kwargs):
+        # Generate three random objectives between 0 and 1 for each solution
+        out["F"] = np.random.rand(x.shape[0], 3)
 
-    def _evaluate(self, X, out, *args, **kwargs):
-        """Evaluates objective values for each solution in the population."""
-        out["F"] = np.random.rand(len(X), 3)  # Random objectives between 0 and 1
 
-# Step 2: Configure NSGA-II Algorithm
+# Callback to save each generation’s details
+class SaveGenerationCallback(Callback):
+    def __init__(self, save_path="version 5/data/"):
+        super().__init__()
+        self.save_path = save_path
+
+    def notify(self, algorithm):
+        gen_number = algorithm.n_gen  # Current generation number
+        filename = os.path.join(self.save_path, f"gen{gen_number}.txt")
+        
+        with open(filename, "w") as f:
+            for sol in algorithm.pop:
+                # Assuming device_id is in the decision variables (X) at a specific index, e.g., index 0
+                device_id = sol.X[0]  # Replace with the correct index if needed
+                f.write(f"Device ID: {device_id}\n")
+                f.write(f"n_eval: {algorithm.evaluator.n_eval}\n")
+                f.write(f"n_nds: {algorithm.opt.shape[0]}\n")
+                # f.write(f"eps: {algorithm.evaluator.eps}\n")
+                # Check if the algorithm has an optimal solution
+                if hasattr(algorithm, "opt") and algorithm.opt is not None:
+                    f.write(f"Best Solution Fitness: {algorithm.opt.get('F')}\n")  # Get fitness values
+                else:
+                    f.write("No optimal solution found.\n")
+                f.write(f"indicator: {sol.F}\n\n")
+
+
+
+
+
+# Number of devices and population size
+N_DEVICES = 10
+POP_SIZE = 20
+NUM_GENERATIONS = 50
+
+# Create problem instance
+problem = FLProblem(n_devices=N_DEVICES)
+
+
+
+# # Ensure population consists of numeric values
+# pop_size = np.array(POP_SIZE, dtype=float)  # Convert to float
+
+
+# Define NSGA-II algorithm
 algorithm = NSGA2(
-    pop_size=POPULATION_SIZE,
-    sampling=BinaryRandomSampling(),      # Random bitstrings
-    crossover=TwoPointCrossover(),        # Two-point crossover
-    mutation=BitflipMutation(),           # Bit flip mutation
-    eliminate_duplicates=True             # Avoid duplicate solutions
+    pop_size=POP_SIZE,
+    # sampling=FloatRandomSampling("bin_random"),
+    # sampling=Sampling(),
+    sampling=FloatRandomSampling(),
+    # crossover = Crossover("bin_two_point", n_offsprings=2),
+    # crossover = Crossover(n_parents=2, n_offsprings=2),  # Set both n_parents and n_offsprings
+    # mutation=Mutation("bin_bitflip"),
+    eliminate_duplicates=True
 )
 
-# Step 3: Run Optimization
+# Define termination condition (generations)
+termination = DefaultMultiObjectiveTermination(n_max_gen=NUM_GENERATIONS)
+
+
+# Run optimization
 res = minimize(
-    problem=FederatedLearningProblem(NUM_DEVICES),
-    algorithm=algorithm,
-    # termination=MultiObjectiveSpaceToleranceTermination(tol=1e-6, n_last=10, nth_gen=5, n_max_gen=NUM_GENERATIONS),
-    termination=DefaultMultiObjectiveTermination(n_max_gen=NUM_GENERATIONS),
-    seed=42,
+    problem,
+    algorithm,
+    termination,
+    seed=1,
+    callback=SaveGenerationCallback(),
     verbose=True
 )
-
-# Step 4: Extract the Best Pareto Front
-pareto_front = res.F   # Objective values of solutions in Pareto front
-pareto_solutions = res.X  # Corresponding bitstrings
-
-# Print the Best Pareto Front Solutions
-print("Best Pareto Front (Bitstrings):")
-for bitstring in pareto_solutions:
-    print("".join(map(str, bitstring)))
