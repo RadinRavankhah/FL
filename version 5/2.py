@@ -181,13 +181,13 @@ from pymoo.operators.sampling.rnd import BinaryRandomSampling
 from pymoo.operators.crossover.pntx import TwoPointCrossover
 from pymoo.operators.mutation.bitflip import BitflipMutation
 from pymoo.operators.selection.tournament import TournamentSelection
-# from pymoo.util.termination.f_tol import MultiObjectiveSpaceToleranceTermination
 from pymoo.termination.default import DefaultMultiObjectiveTermination
 
 # Parameters
 NUM_DEVICES = num_devices   # Number of devices (length of bitstring)
 POPULATION_SIZE = 50
-NUM_GENERATIONS = 300
+NUM_GENERATIONS = 300 # was 100
+# with the number of gnerations growing the number of solutions in te best pareto front also grows
 
 # Step 1: Define the Problem
 class FederatedLearningProblem(Problem):
@@ -205,6 +205,8 @@ class FederatedLearningProblem(Problem):
         """Evaluates objective values for each solution in the population."""
         out["F"] = np.random.rand(len(X), 3)  # Random objectives between 0 and 1
 
+        ####### this should be replaced with 3 objective functions
+
 # Step 2: Configure NSGA-II Algorithm
 algorithm = NSGA2(
     pop_size=POPULATION_SIZE,
@@ -218,7 +220,6 @@ algorithm = NSGA2(
 res = minimize(
     problem=FederatedLearningProblem(NUM_DEVICES),
     algorithm=algorithm,
-    # termination=MultiObjectiveSpaceToleranceTermination(tol=1e-6, n_last=10, nth_gen=5, n_max_gen=NUM_GENERATIONS),
     termination=DefaultMultiObjectiveTermination(n_max_gen=NUM_GENERATIONS),
     seed=42,
     verbose=True
