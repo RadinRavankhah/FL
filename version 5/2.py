@@ -97,7 +97,7 @@ current_learning_iteration += 1
 for device in devices:
     print(int(device.device_id))
     if bitstring[int(device.device_id)] == 1:
-        device.model.fit(device.data[0], device.data[1], epochs=5, verbose=1)
+        device.model.fit(device.data[0], device.data[1], epochs=1, verbose=1)
         device.number_of_times_fitted += 1
 
 
@@ -187,7 +187,7 @@ from pymoo.termination.default import DefaultMultiObjectiveTermination
 # Parameters
 NUM_DEVICES = num_devices   # Number of devices (length of bitstring)
 POPULATION_SIZE = 50
-NUM_GENERATIONS = 100
+NUM_GENERATIONS = 300
 
 # Step 1: Define the Problem
 class FederatedLearningProblem(Problem):
@@ -230,5 +230,16 @@ pareto_solutions = res.X  # Corresponding bitstrings
 
 # Print the Best Pareto Front Solutions
 print("Best Pareto Front (Bitstrings):")
+s = ""
 for bitstring in pareto_solutions:
-    print("".join(map(str, bitstring)))
+    print("".join(map(str, bitstring)).replace("True", "1").replace("False", "0"))
+    print(len("".join(map(str, bitstring)).replace("True", "1").replace("False", "0")))
+    s += "["
+    for character in ("".join(map(str, bitstring)).replace("True", "1").replace("False", "0")):
+        s += character + ","
+    s = s[:-1]
+    s += "]\n"
+    print()
+
+with open("version 5/data/best_pareto_front4.txt", 'w') as f:
+        f.write(s)
