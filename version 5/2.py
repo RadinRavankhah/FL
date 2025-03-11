@@ -18,7 +18,7 @@ class Device:
         self.bandwidth = bandwidth
         self.battery = battery
         self.charging = charging
-        self.energy_consumption = ram + storage + cpu + bandwidth
+        self.hardware = ram + storage + cpu + bandwidth + battery + charging
         self.model = self.create_model()
         self.data = None  # Placeholder for dataset partition
         
