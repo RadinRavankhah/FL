@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Set the number of devices
-num_devices = 100
+num_devices = 30
 
 # Generate random values for each attribute
 np.random.seed(42)
@@ -13,7 +13,7 @@ devices = {
     'cpu': np.random.uniform(0.1, 1.0, num_devices),
     'bandwidth': np.random.uniform(0.1, 1.0, num_devices),
     'battery': np.random.uniform(0.0, 1.0, num_devices),
-    'charging': np.random.randint(0,2,num_devices)
+    'charging': np.random.randint(0, 2, num_devices)
 }
 
 # Create a DataFrame
