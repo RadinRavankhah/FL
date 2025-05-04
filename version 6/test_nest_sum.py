@@ -16,4 +16,4 @@ lists = [
 ]
 
 result = sum_all_nested_lists(lists)
-print(result)  # Output: [111, [222, [333, 444], 555], 666]
+print(result)
