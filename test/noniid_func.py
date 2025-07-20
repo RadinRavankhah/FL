@@ -2,17 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # ----------- Non-IID Dirichlet Split Function -----------
-def niid_labeldir_split(x_data, y_data, num_clients, beta):
+def niid_labeldir_split(x_data, y_data, num_clients, beta, seed=None):
     num_classes = 10
     y_indices = np.array([np.argmax(label) for label in y_data])  # From one-hot to class index
+
+    rng = np.random.default_rng(seed)
 
     client_indices = [[] for _ in range(num_clients)]
 
     for k in range(num_classes):
         idx_k = np.where(y_indices == k)[0]
-        np.random.shuffle(idx_k)
+        rng.shuffle(idx_k)
 
-        proportions = np.random.dirichlet(np.repeat(beta, num_clients))
+        proportions = rng.dirichlet(np.repeat(beta, num_clients))
         proportions = np.array([int(p * len(idx_k)) for p in proportions])
 
         while sum(proportions) < len(idx_k):
@@ -35,13 +37,16 @@ num_samples = 1000
 num_classes = 10
 num_clients = 30
 beta = 0.5
+seed = 1
+global_rng = np.random.default_rng(seed)
+# Replace all np.random with rng
 
 # Random images (28x28 grayscale) and one-hot labels
-x_dummy = np.random.rand(num_samples, 28, 28, 1)
-y_dummy = np.eye(num_classes)[np.random.randint(0, num_classes, size=num_samples)]
+x_dummy = global_rng.random((num_samples, 28, 28, 1))
+y_dummy = np.eye(num_classes)[global_rng.integers(0, num_classes, size=num_samples)]
 
 # Perform the NIID split
-split_indices = niid_labeldir_split(x_dummy, y_dummy, num_clients, beta)
+split_indices = niid_labeldir_split(x_dummy, y_dummy, num_clients, beta, seed)
 
 # Print label distribution for each client
 print("\nLabel distribution per client:")
